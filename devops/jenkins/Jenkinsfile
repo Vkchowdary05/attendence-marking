@@ -1,0 +1,94 @@
+pipeline {
+    agent any
+
+    environment {
+        REGISTRY = 'docker.io/library'
+        BACKEND_IMAGE = 'attendance-backend'
+        FRONTEND_IMAGE = 'attendance-frontend'
+        IMAGE_TAG = "${BUILD_NUMBER}"
+        KUBECONFIG_CREDENTIALS_ID = 'k8s-config'
+    }
+
+    tools {
+        maven 'Maven 3.9'
+        jdk 'JDK 21'
+        nodejs 'NodeJS 20'
+    }
+
+    stages {
+        stage('1. Checkout Source') {
+            steps {
+                echo 'Checking out source repository from GitHub...'
+                checkout scm
+            }
+        }
+
+        stage('2. Backend Tests (JUnit & Integration)') {
+            steps {
+                dir('backend') {
+                    echo 'Executing Spring Boot unit and Hibernate integration tests...'
+                    sh 'mvn clean test'
+                }
+            }
+            post {
+                always {
+                    junit 'backend/target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        stage('3. Frontend Build (React)') {
+            steps {
+                dir('frontend') {
+                    echo 'Installing npm dependencies and bundling React application...'
+                    sh 'npm ci'
+                    sh 'npm run build'
+                }
+            }
+        }
+
+        stage('4. Package Executable JAR') {
+            steps {
+                dir('backend') {
+                    echo 'Repackaging unified Spring Boot application...'
+                    sh 'mvn package -DskipTests'
+                }
+            }
+        }
+
+        stage('5. Docker Containerization') {
+            steps {
+                echo 'Building Docker container images...'
+                sh "docker build -t ${BACKEND_IMAGE}:${IMAGE_TAG} -t ${BACKEND_IMAGE}:latest ./backend"
+                sh "docker build -t ${FRONTEND_IMAGE}:${IMAGE_TAG} -t ${FRONTEND_IMAGE}:latest ./frontend"
+            }
+        }
+
+        stage('6. Automated Selenium Verification') {
+            steps {
+                dir('backend') {
+                    echo 'Running headless Selenium WebDriver automated test suite...'
+                    sh 'mvn test -Dtest=SeleniumAttendanceTest'
+                }
+            }
+        }
+
+        stage('7. Kubernetes Cluster Rollout') {
+            steps {
+                echo 'Deploying application to Kubernetes cluster namespace attendance-system...'
+                sh 'kubectl apply -f devops/k8s/'
+                sh 'kubectl rollout status deployment/backend-deployment -n attendance-system --timeout=120s'
+                sh 'kubectl rollout status deployment/frontend-deployment -n attendance-system --timeout=120s'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "CI/CD Pipeline finished successfully! Application deployed and verified."
+        }
+        failure {
+            echo "Pipeline failed. Inspect stage console logs for diagnostics."
+        }
+    }
+}

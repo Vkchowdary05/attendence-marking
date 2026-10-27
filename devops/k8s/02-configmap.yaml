@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: attendance-config
+  namespace: attendance-system
+data:
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres-service:5432/attendance_db"
+  SPRING_DATASOURCE_USERNAME: "postgres"
+  SERVER_PORT: "8080"
+  POSTGRES_DB: "attendance_db"
+  POSTGRES_USER: "postgres"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: attendance-secret
+  namespace: attendance-system
+type: Opaque
+stringData:
+  POSTGRES_PASSWORD: "root"
+  SPRING_DATASOURCE_PASSWORD: "root"
