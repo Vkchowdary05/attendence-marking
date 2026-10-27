@@ -35,7 +35,8 @@ This system faithfully implements the exact specifications and layout from the a
 
 | Layer | Technology | Version | Purpose |
 |:---|:---|:---|:---|
-| **Frontend** | React + Vite | React 19 / Vite 6 | Monochrome Black & White UI, zero animations |
+| **Frontend** | React 19 + Vite 6 + Tailwind CSS | Latest | Modern **shadcn/ui** components, monochrome zinc theme |
+| **UI Components** | shadcn/ui + Radix primitives | Official | Button, Card, Dialog, Badge, Table, Input, Tabs |
 | **Backend** | Spring Boot | 3.3.4 | REST API, validation, business logic |
 | **ORM / Integration**| Hibernate + Spring Data JPA | 6.5 | Object-Relational Mapping & Transactions |
 | **Database** | PostgreSQL | 18 / 16 | Relational persistence with unique constraints |
