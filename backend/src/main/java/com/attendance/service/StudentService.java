@@ -68,6 +68,35 @@ public class StudentService {
         return toDto(studentRepository.save(student));
     }
 
+    public List<StudentDto> bulkCreateStudents(List<StudentDto> dtoList) {
+        List<StudentDto> results = new java.util.ArrayList<>();
+        for (StudentDto dto : dtoList) {
+            if (dto.getRollNumber() == null || dto.getName() == null) continue;
+            String roll = dto.getRollNumber().trim();
+            if (roll.isEmpty()) continue;
+
+            if (studentRepository.existsByRollNumber(roll)) {
+                // Update existing
+                Student existing = studentRepository.findByRollNumber(roll).orElseThrow();
+                existing.setName(dto.getName().trim());
+                if (dto.getDepartment() != null) existing.setDepartment(dto.getDepartment().trim());
+                if (dto.getSemester() != null) existing.setSemester(dto.getSemester());
+                results.add(toDto(studentRepository.save(existing)));
+            } else {
+                Student student = Student.builder()
+                        .rollNumber(roll)
+                        .name(dto.getName().trim())
+                        .department(dto.getDepartment() != null ? dto.getDepartment().trim() : "General")
+                        .semester(dto.getSemester() != null ? dto.getSemester() : 5)
+                        .email(dto.getEmail() != null ? dto.getEmail().trim() : null)
+                        .phone(dto.getPhone() != null ? dto.getPhone().trim() : null)
+                        .build();
+                results.add(toDto(studentRepository.save(student)));
+            }
+        }
+        return results;
+    }
+
     public StudentDto updateStudent(Long id, StudentDto dto) {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found with ID: " + id));

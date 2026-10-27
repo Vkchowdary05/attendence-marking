@@ -45,6 +45,16 @@ public class StudentController {
         }
     }
 
+    @PostMapping("/bulk")
+    public ResponseEntity<?> bulkCreateStudents(@RequestBody List<StudentDto> dtoList) {
+        try {
+            List<StudentDto> created = studentService.bulkCreateStudents(dtoList);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> updateStudent(
             @PathVariable Long id,

@@ -600,6 +600,42 @@ export default function DailyAttendanceView({ selectedDept, departments }) {
               ))
             )}
           </tbody>
+          {studentsData.length > 0 && (
+            <tfoot>
+              <tr style={{ backgroundColor: '#F4F4F5', borderTop: '2px solid #000000', fontWeight: 700 }}>
+                <td colSpan={2} style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', textTransform: 'uppercase' }}>
+                  Class Attendance / Period:
+                </td>
+                {[1, 2, 3, 4, 5, 6, 7].map(period => {
+                  const presentInP = studentsData.filter(s => s.periods && s.periods[period] === 'PRESENT').length;
+                  const totalInP = studentsData.length;
+                  const pct = totalInP > 0 ? Math.round((presentInP / totalInP) * 100) : 0;
+                  return (
+                    <td key={period} style={{ textAlign: 'center', padding: '8px 4px', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
+                      <div><strong>{presentInP}</strong>/{totalInP}</div>
+                      <div style={{ fontSize: '10px', color: '#52525B' }}>{pct}%</div>
+                    </td>
+                  );
+                })}
+                <td style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
+                  {(() => {
+                    const totalP = studentsData.reduce((acc, s) => acc + (s.presentCount || 0), 0);
+                    const totalSlots = studentsData.length * 7;
+                    const dayPct = totalSlots > 0 ? ((totalP / totalSlots) * 100).toFixed(1) : 0;
+                    return (
+                      <div>
+                        <strong>{totalP}</strong>/{totalSlots}
+                        <div style={{ fontSize: '10px', color: '#52525B' }}>{dayPct}% Avg</div>
+                      </div>
+                    );
+                  })()}
+                </td>
+                <td style={{ textAlign: 'right', fontSize: '11px', color: '#71717A', fontFamily: 'var(--font-mono)' }}>
+                  Daily Summary
+                </td>
+              </tr>
+            </tfoot>
+          )}
         </table>
       </div>
     </div>

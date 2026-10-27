@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getStudents, createStudent, updateStudent, deleteStudent } from '../api';
-import { UserPlus, Edit2, Trash2, Search, Check, AlertCircle, X } from 'lucide-react';
+import { getStudents, createStudent, updateStudent, deleteStudent, bulkCreateStudents } from '../api';
+import { UserPlus, Edit2, Trash2, Search, Check, AlertCircle, X, Upload } from 'lucide-react';
 
 export default function StudentManagementView({ selectedDept, departments, onRefreshDepts }) {
   const [students, setStudents] = useState([]);
@@ -10,6 +10,10 @@ export default function StudentManagementView({ selectedDept, departments, onRef
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [bulkText, setBulkText] = useState(
+    "111, Arun Kumar, CSE (AI & ML)\n112, Bhavna Rao, CSE (AI & ML)\n113, Chetan Das, CSE (AI & ML)"
+  );
   const [editingStudent, setEditingStudent] = useState(null);
   const [formData, setFormData] = useState({
     rollNumber: '',
@@ -100,6 +104,37 @@ export default function StudentManagementView({ selectedDept, departments, onRef
     }
   };
 
+  const handleBulkImport = async () => {
+    try {
+      const lines = bulkText.split('\n');
+      const list = [];
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const parts = line.split(',').map(s => s.trim());
+        if (parts.length >= 2) {
+          list.push({
+            rollNumber: parts[0],
+            name: parts[1],
+            department: parts[2] || (department !== 'ALL' ? department : 'CSE (AI & ML)'),
+            semester: 5
+          });
+        }
+      }
+      if (list.length === 0) {
+        alert('Please enter at least one valid line in format: Roll, Name, Department');
+        return;
+      }
+      await bulkCreateStudents(list);
+      setSuccessMessage(`Successfully imported ${list.length} students!`);
+      setIsBulkModalOpen(false);
+      loadStudents();
+      if (onRefreshDepts) onRefreshDepts();
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      alert('Bulk import failed: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
   const filtered = students.filter(s => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
@@ -126,23 +161,43 @@ export default function StudentManagementView({ selectedDept, departments, onRef
           </div>
         </div>
 
-        <button
-          onClick={openAddModal}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 18px',
-            fontSize: '13px',
-            fontWeight: 700,
-            border: '2px solid #000000',
-            backgroundColor: '#000000',
-            color: '#FFFFFF'
-          }}
-        >
-          <UserPlus size={16} />
-          <span>Register New Student</span>
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={() => setIsBulkModalOpen(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '10px 16px',
+              fontSize: '13px',
+              fontWeight: 700,
+              border: '2px solid #000000',
+              backgroundColor: '#FFFFFF',
+              color: '#000000'
+            }}
+          >
+            <Upload size={15} />
+            <span>Bulk CSV Import</span>
+          </button>
+
+          <button
+            onClick={openAddModal}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 18px',
+              fontSize: '13px',
+              fontWeight: 700,
+              border: '2px solid #000000',
+              backgroundColor: '#000000',
+              color: '#FFFFFF'
+            }}
+          >
+            <UserPlus size={16} />
+            <span>Register New Student</span>
+          </button>
+        </div>
       </div>
 
       {successMessage && (
@@ -503,6 +558,100 @@ export default function StudentManagementView({ selectedDept, departments, onRef
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk CSV Import Modal */}
+      {isBulkModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 100,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            border: '3px solid #000000',
+            width: '100%',
+            maxWidth: '560px',
+            padding: '24px'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: '2px solid #000000',
+              paddingBottom: '12px',
+              marginBottom: '16px'
+            }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>
+                Bulk CSV / Text Student Import
+              </h2>
+              <button
+                onClick={() => setIsBulkModalOpen(false)}
+                style={{ padding: '4px', border: '1px solid #000000', backgroundColor: '#FFFFFF' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ fontSize: '12px', color: '#52525B', marginBottom: '12px' }}>
+              Paste comma-separated rows. Format: <code>Roll Number, Student Name, Department</code>
+            </div>
+
+            <textarea
+              rows={8}
+              value={bulkText}
+              onChange={(e) => setBulkText(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px',
+                border: '1px solid #000000',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '13px',
+                resize: 'vertical',
+                marginBottom: '16px'
+              }}
+            />
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setIsBulkModalOpen(false)}
+                style={{
+                  padding: '8px 16px',
+                  border: '1px solid #000000',
+                  backgroundColor: '#FFFFFF',
+                  color: '#000000',
+                  fontWeight: 600,
+                  fontSize: '13px'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkImport}
+                style={{
+                  padding: '8px 20px',
+                  border: '2px solid #000000',
+                  backgroundColor: '#000000',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  fontSize: '13px'
+                }}
+              >
+                Import All Students
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -17,6 +17,11 @@ export const getStudents = async (department) => {
 
 export const createStudent = async (studentData) => {
   const res = await api.post('/students', studentData);
+  return res.data;
+};
+
+export const bulkCreateStudents = async (studentsList) => {
+  const res = await api.post('/students/bulk', studentsList);
   return res.data;
 };
 
