@@ -9,6 +9,11 @@ const api = axios.create({
   },
 });
 
+export const loginApi = async (username, password) => {
+  const res = await api.post('/auth/login', { username, password });
+  return res.data;
+};
+
 export const getStudents = async (department) => {
   const params = department && department !== 'ALL' ? { department } : {};
   const res = await api.get('/students', { params });

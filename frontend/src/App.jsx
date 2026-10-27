@@ -7,10 +7,16 @@ import MonthlyReportPage from "./pages/MonthlyReportPage";
 import DefaultersPage from "./pages/DefaultersPage";
 import StudentsPage from "./pages/StudentsPage";
 import DevOpsPage from "./pages/DevOpsPage";
+import LoginPage from "./pages/LoginPage";
 import StudentDetailModal from "./components/StudentDetailModal";
 import { getDepartments, resetSampleData } from "./api";
 
 export default function App() {
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem("ams_user");
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [departments, setDepartments] = useState(["CSE (AI & ML)", "Computer Science"]);
   const [selectedDept, setSelectedDept] = useState("CSE (AI & ML)");
@@ -29,8 +35,16 @@ export default function App() {
   };
 
   useEffect(() => {
-    fetchDepts();
-  }, []);
+    if (currentUser) {
+      fetchDepts();
+    }
+  }, [currentUser]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("ams_user");
+    setCurrentUser(null);
+    setCurrentPage("dashboard");
+  };
 
   const handleResetData = async () => {
     if (
@@ -56,6 +70,11 @@ export default function App() {
     setSelectedStudentForModal({ studentId, year, month });
   };
 
+  // If not authenticated, render Login Page
+  if (!currentUser) {
+    return <LoginPage onLoginSuccess={(user) => setCurrentUser(user)} />;
+  }
+
   return (
     <div className="min-h-screen bg-zinc-50/40 text-zinc-950 flex flex-col sm:flex-row antialiased selection:bg-black selection:text-white">
       {/* Modern shadcn Sidebar */}
@@ -64,6 +83,8 @@ export default function App() {
         setCurrentPage={setCurrentPage}
         onResetData={handleResetData}
         isResetting={isResetting}
+        currentUser={currentUser}
+        onLogout={handleLogout}
       />
 
       {/* Main Content Area */}
@@ -73,6 +94,8 @@ export default function App() {
           selectedDept={selectedDept}
           setSelectedDept={setSelectedDept}
           departments={departments}
+          currentUser={currentUser}
+          onLogout={handleLogout}
         />
 
         <main className="flex-1 p-6 max-w-7xl w-full mx-auto">

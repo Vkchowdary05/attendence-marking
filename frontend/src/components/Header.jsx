@@ -1,7 +1,7 @@
 import React from "react";
 import { Layers, Calendar, ChevronRight } from "lucide-react";
 
-export default function Header({ currentPage, selectedDept, setSelectedDept, departments }) {
+export default function Header({ currentPage, selectedDept, setSelectedDept, departments, currentUser, onLogout }) {
   const pageTitles = {
     dashboard: "Executive Dashboard",
     daily: "Daily 7-Period Attendance Grid",
@@ -22,32 +22,43 @@ export default function Header({ currentPage, selectedDept, setSelectedDept, dep
         </span>
       </div>
 
-      {/* Right Controls: Department & Academic Year */}
+      {/* Right Controls: User Profile, Department & Academic Year */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 bg-zinc-50 border border-zinc-200 px-3 py-1.5 rounded-md">
+        {currentUser && (
+          <div className="hidden md:flex items-center gap-2 bg-zinc-100/70 border border-zinc-200 px-2.5 py-1 rounded-md text-xs">
+            <span className="font-medium text-zinc-800">{currentUser.name}</span>
+            <span className="text-[10px] font-mono font-bold bg-zinc-950 text-white px-1.5 py-0.2 rounded">
+              {currentUser.role}
+            </span>
+          </div>
+        )}
+
+        <div className="hidden lg:flex items-center gap-2 bg-zinc-50 border border-zinc-200 px-3 py-1 rounded-md">
           <Calendar className="h-3.5 w-3.5 text-zinc-500" />
-          <span className="text-xs font-semibold text-zinc-700 font-mono">Academic Year 2026-27</span>
+          <span className="text-xs font-semibold text-zinc-700 font-mono">Academic 2026-27</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <label className="text-xs font-semibold text-zinc-600 hidden sm:inline">Dept:</label>
-          <select
-            value={selectedDept}
-            onChange={(e) => setSelectedDept(e.target.value)}
-            className="h-8 px-2.5 text-xs font-semibold rounded-md border border-zinc-300 bg-white text-zinc-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-zinc-950"
-          >
-            {departments && departments.length > 0 ? (
-              departments.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))
-            ) : (
-              <option value="CSE (AI & ML)">CSE (AI & ML)</option>
-            )}
-            <option value="ALL">All Departments</option>
-          </select>
-        </div>
+        {currentUser?.role !== "STUDENT" && (
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-zinc-600 hidden sm:inline">Dept:</label>
+            <select
+              value={selectedDept}
+              onChange={(e) => setSelectedDept(e.target.value)}
+              className="h-8 px-2.5 text-xs font-semibold rounded-md border border-zinc-300 bg-white text-zinc-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-zinc-950"
+            >
+              {departments && departments.length > 0 ? (
+                departments.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))
+              ) : (
+                <option value="CSE (AI & ML)">CSE (AI & ML)</option>
+              )}
+              <option value="ALL">All Departments</option>
+            </select>
+          </div>
+        )}
       </div>
     </header>
   );
