@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import Navbar from './components/Navbar';
-import DailyAttendanceView from './components/DailyAttendanceView';
-import MonthlyReportView from './components/MonthlyReportView';
-import StudentManagementView from './components/StudentManagementView';
-import StudentDetailModal from './components/StudentDetailModal';
-import DevOpsView from './components/DevOpsView';
-import { getDepartments, resetSampleData } from './api';
+import React, { useState, useEffect } from "react";
+import Sidebar from "./components/Sidebar";
+import Header from "./components/Header";
+import DashboardPage from "./pages/DashboardPage";
+import DailyAttendancePage from "./pages/DailyAttendancePage";
+import MonthlyReportPage from "./pages/MonthlyReportPage";
+import DefaultersPage from "./pages/DefaultersPage";
+import StudentsPage from "./pages/StudentsPage";
+import DevOpsPage from "./pages/DevOpsPage";
+import StudentDetailModal from "./components/StudentDetailModal";
+import { getDepartments, resetSampleData } from "./api";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('daily');
-  const [departments, setDepartments] = useState(['CSE (AI & ML)', 'Computer Science']);
-  const [selectedDept, setSelectedDept] = useState('CSE (AI & ML)');
+  const [currentPage, setCurrentPage] = useState("dashboard");
+  const [departments, setDepartments] = useState(["CSE (AI & ML)", "Computer Science"]);
+  const [selectedDept, setSelectedDept] = useState("CSE (AI & ML)");
   const [selectedStudentForModal, setSelectedStudentForModal] = useState(null);
   const [isResetting, setIsResetting] = useState(false);
 
@@ -21,7 +24,7 @@ export default function App() {
         setDepartments(list);
       }
     } catch (err) {
-      console.error('Failed to fetch departments:', err);
+      console.error("Failed to fetch departments:", err);
     }
   };
 
@@ -30,16 +33,19 @@ export default function App() {
   }, []);
 
   const handleResetData = async () => {
-    if (window.confirm('Reset all attendance and students to default sample preview data (October 2026)?')) {
+    if (
+      window.confirm(
+        "Reset all attendance and students to default sample preview data (October 2026)?"
+      )
+    ) {
       setIsResetting(true);
       try {
         await resetSampleData();
         await fetchDepts();
-        // Force refresh current view by toggling tab briefly or window reload
         window.location.reload();
       } catch (err) {
-        console.error('Failed to reset demo data:', err);
-        alert('Failed to reset demo data.');
+        console.error("Failed to reset demo data:", err);
+        alert("Failed to reset demo data.");
       } finally {
         setIsResetting(false);
       }
@@ -51,67 +57,81 @@ export default function App() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF', display: 'flex', flexDirection: 'column' }}>
-      {/* Black and White Header */}
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
+    <div className="min-h-screen bg-zinc-50/40 text-zinc-950 flex flex-col sm:flex-row antialiased selection:bg-black selection:text-white">
+      {/* Modern shadcn Sidebar */}
+      <Sidebar
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
         onResetData={handleResetData}
         isResetting={isResetting}
       />
 
       {/* Main Content Area */}
-      <main style={{ flex: 1, paddingBottom: '60px' }}>
-        {activeTab === 'daily' && (
-          <DailyAttendanceView
-            selectedDept={selectedDept}
-            departments={departments}
-          />
-        )}
-
-        {activeTab === 'monthly' && (
-          <MonthlyReportView
-            selectedDept={selectedDept}
-            departments={departments}
-            onSelectStudent={handleOpenStudentDetail}
-          />
-        )}
-
-        {activeTab === 'students' && (
-          <StudentManagementView
-            selectedDept={selectedDept}
-            departments={departments}
-            onRefreshDepts={fetchDepts}
-          />
-        )}
-
-        {activeTab === 'devops' && (
-          <DevOpsView />
-        )}
-      </main>
-
-      {/* Individual Student Detail Modal */}
-      {selectedStudentForModal && (
-        <StudentDetailModal
-          studentId={selectedStudentForModal.studentId}
-          year={selectedStudentForModal.year}
-          month={selectedStudentForModal.month}
-          onClose={() => setSelectedStudentForModal(null)}
+      <div className="flex-1 flex flex-col min-w-0">
+        <Header
+          currentPage={currentPage}
+          selectedDept={selectedDept}
+          setSelectedDept={setSelectedDept}
+          departments={departments}
         />
-      )}
 
-      {/* Footer */}
-      <footer style={{
-        borderTop: '2px solid #000000',
-        backgroundColor: '#FFFFFF',
-        padding: '16px 24px',
-        textAlign: 'center',
-        fontSize: '12px',
-        fontFamily: 'var(--font-mono)',
-        color: '#52525B'
-      }}>
-        Student Attendance Management System · DevOps Engineering Project · Built with React, Spring Boot, Hibernate & PostgreSQL
-      </footer>
+        <main className="flex-1 p-6 max-w-7xl w-full mx-auto">
+          {currentPage === "dashboard" && (
+            <DashboardPage
+              setCurrentPage={setCurrentPage}
+              selectedDept={selectedDept}
+              onSelectStudent={handleOpenStudentDetail}
+            />
+          )}
+
+          {currentPage === "daily" && (
+            <DailyAttendancePage
+              selectedDept={selectedDept}
+              departments={departments}
+            />
+          )}
+
+          {currentPage === "monthly" && (
+            <MonthlyReportPage
+              selectedDept={selectedDept}
+              departments={departments}
+              onSelectStudent={handleOpenStudentDetail}
+            />
+          )}
+
+          {currentPage === "defaulters" && (
+            <DefaultersPage
+              selectedDept={selectedDept}
+              onSelectStudent={handleOpenStudentDetail}
+            />
+          )}
+
+          {currentPage === "students" && (
+            <StudentsPage
+              selectedDept={selectedDept}
+              departments={departments}
+              onRefreshDepts={fetchDepts}
+            />
+          )}
+
+          {currentPage === "devops" && <DevOpsPage />}
+        </main>
+
+        {/* Global Student Dossier Modal */}
+        {selectedStudentForModal && (
+          <StudentDetailModal
+            studentId={selectedStudentForModal.studentId}
+            year={selectedStudentForModal.year}
+            month={selectedStudentForModal.month}
+            onClose={() => setSelectedStudentForModal(null)}
+          />
+        )}
+
+        {/* Modern Minimal Footer */}
+        <footer className="border-t border-zinc-200 bg-white px-6 py-4 text-center text-xs font-mono text-zinc-500">
+          Student Attendance Management System · DevOps Engineering Project · React 19 + Spring Boot 3 + PostgreSQL
+        </footer>
+      </div>
     </div>
   );
 }
